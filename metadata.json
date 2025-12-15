@@ -1,0 +1,5 @@
+{
+  "name": "Automation Advisor",
+  "description": "An application that analyzes your daily tasks and provides suggestions on what can and should be automated, powered by Gemini.",
+  "requestFramePermissions": []
+}

@@ -1,0 +1,179 @@
+
+<div class="min-h-screen flex flex-col items-center p-4 sm:p-6 lg:p-8 bg-slate-900 font-sans">
+  <div class="w-full max-w-4xl mx-auto">
+    <!-- Header -->
+    <header class="text-center mb-8">
+      <div class="inline-block bg-indigo-500/10 p-3 rounded-xl mb-4">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 text-indigo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M12 6V4m0 16v-2m0-10v2m0 6v2M6 12H4m16 0h-2m-10 0h2m6 0h2M9 15l-2 2M17 7l-2 2m0 6l2 2M7 7l2 2" />
+        </svg>
+      </div>
+      <h1 class="text-4xl sm:text-5xl font-extrabold text-white tracking-tight">Automation Advisor</h1>
+      <p class="mt-4 text-lg text-slate-400 max-w-2xl mx-auto">Describe a task, scan a project, or analyze learning materials to discover your automation potential.</p>
+    </header>
+
+    <!-- Input Section -->
+    <main>
+      <div class="bg-slate-800/50 p-6 rounded-2xl shadow-lg border border-slate-700">
+        <label for="task-description" class="block text-base font-medium text-slate-300 mb-2">1. Describe a Manual Task</label>
+        <textarea
+          id="task-description"
+          rows="5"
+          [value]="taskDescription()"
+          (input)="taskDescription.set($any($event.target).value)"
+          placeholder="e.g., 'Every morning, I copy sales data from an email into a spreadsheet...'"
+          class="w-full p-4 bg-slate-900/70 border border-slate-600 rounded-lg text-slate-200 placeholder-slate-500 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors duration-200 resize-none"></textarea>
+        
+        <div class="mt-4 flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div class="text-sm text-slate-400">
+             Need ideas? <span class="font-medium text-indigo-400">Try an example:</span>
+          </div>
+          <div class="flex flex-wrap gap-2 justify-center sm:justify-end">
+            @for(prompt of examplePrompts(); track prompt; let i = $index) {
+              <button (click)="selectExample(prompt)" class="px-3 py-1 bg-slate-700 hover:bg-slate-600 text-slate-300 rounded-full text-xs transition-colors">
+                Example {{i + 1}}
+              </button>
+            }
+          </div>
+        </div>
+
+        <div class="mt-6 border-t border-slate-700 pt-6">
+           <p class="text-center text-sm text-slate-400 mb-4">2. Choose Your Analysis Method</p>
+           <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+             <!-- Analyze Task Button -->
+             <button
+               (click)="analyzeTask()"
+               [disabled]="loadingState() !== 'idle' || !taskDescription().trim()"
+               class="w-full flex items-center justify-center gap-3 bg-indigo-600 hover:bg-indigo-500 disabled:bg-indigo-800/50 disabled:cursor-not-allowed text-white font-semibold py-3 px-6 rounded-lg transition-all duration-300 shadow-lg shadow-indigo-600/20 transform hover:scale-105 disabled:scale-100">
+               @if (loadingState() === 'analyzing_task') {
+                 <svg class="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                   <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                   <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                 </svg>
+                 <span>Analyzing...</span>
+               } @else {
+                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                   <path stroke-linecap="round" stroke-linejoin="round" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+                 </svg>
+                 <span>Analyze Task</span>
+               }
+             </button>
+             <!-- Scan Project Button -->
+              <button
+                (click)="scanLocalProject()"
+                [disabled]="loadingState() !== 'idle'"
+                class="w-full flex items-center justify-center gap-3 bg-sky-600 hover:bg-sky-500 disabled:bg-sky-800/50 disabled:cursor-not-allowed text-white font-semibold py-3 px-6 rounded-lg transition-all duration-300 shadow-lg shadow-sky-600/20 transform hover:scale-105 disabled:scale-100">
+                @if (loadingState() === 'scanning_project') {
+                  <svg class="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  <span>Scanning...</span>
+                } @else {
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
+                  </svg>
+                  <span>Scan Project</span>
+                }
+             </button>
+              <!-- Scan Learning Folder Button -->
+              <button
+                (click)="scanLearningFolder()"
+                [disabled]="loadingState() !== 'idle'"
+                class="w-full flex items-center justify-center gap-3 bg-emerald-600 hover:bg-emerald-500 disabled:bg-emerald-800/50 disabled:cursor-not-allowed text-white font-semibold py-3 px-6 rounded-lg transition-all duration-300 shadow-lg shadow-emerald-600/20 transform hover:scale-105 disabled:scale-100">
+                @if (loadingState() === 'scanning_learning') {
+                  <svg class="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  <span>Scanning...</span>
+                } @else {
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                     <path stroke-linecap="round" stroke-linejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                  </svg>
+                  <span>Scan Learning</span>
+                }
+             </button>
+           </div>
+        </div>
+      </div>
+
+      <!-- Results Section -->
+      <div class="mt-10">
+        @if (loadingState() !== 'idle') {
+          <div class="text-center text-slate-400">
+            @if(loadingState() === 'analyzing_task') {
+               <p>Letting the gears turn... finding the best ways to automate your work!</p>
+            } @else if(loadingState() === 'scanning_project') {
+               <p>Scanning your project files... preparing DevOps recommendations!</p>
+            } @else if(loadingState() === 'scanning_learning') {
+               <p>Analyzing your learning materials... generating knowledge automation ideas!</p>
+            }
+          </div>
+        }
+
+        @if (error()) {
+          <div class="bg-red-900/50 border border-red-700 text-red-300 p-4 rounded-lg text-center">
+            <h3 class="font-bold">An Error Occurred</h3>
+            <p>{{ error() }}</p>
+          </div>
+        }
+
+        @if (suggestions()) {
+          <div class="space-y-6">
+            <h2 class="text-2xl font-bold text-white text-center mb-4">Your Automation Roadmap</h2>
+            @for(suggestion of suggestions(); track $index) {
+              <div class="bg-slate-800/50 border border-slate-700 rounded-xl shadow-md overflow-hidden transition-all hover:border-indigo-500/50 hover:shadow-xl">
+                <div class="p-6">
+                  <div class="flex items-center gap-4">
+                     <div class="flex-shrink-0 bg-indigo-500/10 p-2 rounded-lg">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-indigo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                          <path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
+                        </svg>
+                     </div>
+                     <h3 class="text-xl font-bold text-indigo-400">{{ suggestion.area }}</h3>
+                  </div>
+                  
+                  <div class="mt-4 grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <!-- Tool -->
+                      <div class="bg-slate-900/40 p-4 rounded-lg">
+                        <h4 class="font-semibold text-slate-300 flex items-center gap-2">
+                          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+                          Recommended Tool
+                        </h4>
+                        <p class="text-indigo-400 font-medium mt-1">{{ suggestion.tool }}</p>
+                      </div>
+
+                      <!-- Benefit -->
+                      <div class="bg-slate-900/40 p-4 rounded-lg">
+                        <h4 class="font-semibold text-slate-300 flex items-center gap-2">
+                           <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                          Key Benefit
+                        </h4>
+                        <p class="text-green-400 font-medium mt-1">{{ suggestion.benefit }}</p>
+                      </div>
+                  </div>
+
+                  <!-- Steps -->
+                  <div class="mt-6">
+                    <h4 class="font-semibold text-slate-300 mb-2">Implementation Steps:</h4>
+                    <ul class="space-y-2 list-inside">
+                      @for(step of suggestion.steps; track $index) {
+                        <li class="flex items-start">
+                          <svg class="h-5 w-5 text-indigo-400 mr-3 mt-0.5 flex-shrink-0" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                          </svg>
+                          <span class="text-slate-400">{{ step }}</span>
+                        </li>
+                      }
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            }
+          </div>
+        }
+      </div>
+    </main>
+  </div>
+</div>
