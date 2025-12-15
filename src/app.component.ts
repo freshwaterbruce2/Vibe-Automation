@@ -2,6 +2,7 @@
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { GeminiService, AutomationSuggestion } from './services/gemini.service';
+import { VisualizationComponent } from './visualization/visualization.component';
 
 // Define the File System Access API types to avoid TypeScript errors
 // as they are not yet in the default lib.
@@ -27,7 +28,7 @@ declare global {
   templateUrl: './app.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
   standalone: true,
-  imports: [CommonModule]
+  imports: [CommonModule, VisualizationComponent]
 })
 export class AppComponent {
   private readonly geminiService = inject(GeminiService);
@@ -48,7 +49,8 @@ export class AppComponent {
   }
   
   async analyzeTask(): Promise<void> {
-    if (!this.taskDescription().trim()) {
+    const taskText = this.taskDescription().trim();
+    if (!taskText) {
       this.error.set("Please describe a task to analyze.");
       return;
     }
@@ -58,7 +60,17 @@ export class AppComponent {
     this.error.set(null);
 
     try {
-      const response = await this.geminiService.getTaskAutomationSuggestions(this.taskDescription());
+      let fullTaskDescription = taskText;
+
+      if (window.confirm("Do you want to select a local folder to provide more context for your task?")) {
+        const keyFiles = new Set(['.csv', '.json', '.xml', '.txt', '.md']);
+        const summary = await this.pickAndSummarizeDirectory(keyFiles, true); 
+        if (summary) {
+          fullTaskDescription += `\n\n--- CONTEXT FROM LOCAL FILES ---\n${summary}`;
+        }
+      }
+
+      const response = await this.geminiService.getTaskAutomationSuggestions(fullTaskDescription);
       if (response && response.suggestions.length > 0) {
         this.suggestions.set(response.suggestions);
       } else {
@@ -74,6 +86,8 @@ export class AppComponent {
 
   async scanLocalProject(): Promise<void> {
     this.loadingState.set('scanning_project');
+    this.suggestions.set(null);
+    this.error.set(null);
     try {
       const keyFiles = new Set([
         'package.json', 'pnpm-workspace.yaml', 'lerna.json', 'nx.json', 'turbo.json',
@@ -81,8 +95,8 @@ export class AppComponent {
         'docker-compose.yml', 'Dockerfile', 'Jenkinsfile', 'azure-pipelines.yml',
         'tsconfig.json', 'pyproject.toml', 'requirements.txt'
       ]);
-      const summary = await this.scanDirectory(keyFiles);
-      if (summary === null) return; // User cancelled or error was handled
+      const summary = await this.pickAndSummarizeDirectory(keyFiles);
+      if (summary === null) return; // User cancelled
 
       const response = await this.geminiService.getProjectAutomationSuggestions(summary);
       if (response && response.suggestions.length > 0) {
@@ -90,6 +104,9 @@ export class AppComponent {
       } else {
         this.error.set("No automation suggestions could be generated for this project. It might not contain recognizable configuration files.");
       }
+    } catch (e: unknown) {
+      const errorMessage = e instanceof Error ? e.message : 'An unknown error occurred.';
+      this.error.set(errorMessage);
     } finally {
       this.loadingState.set('idle');
     }
@@ -97,10 +114,12 @@ export class AppComponent {
 
   async scanLearningFolder(): Promise<void> {
     this.loadingState.set('scanning_learning');
+    this.suggestions.set(null);
+    this.error.set(null);
     try {
       const keyFiles = new Set(['.md', '.txt', '.json', '.srt', '.vtt', '.pdf', '.epub']);
-      const summary = await this.scanDirectory(keyFiles, true);
-      if (summary === null) return; // User cancelled or error was handled
+      const summary = await this.pickAndSummarizeDirectory(keyFiles, true);
+      if (summary === null) return; // User cancelled
 
       const response = await this.geminiService.getLearningAutomationSuggestions(summary);
       if (response && response.suggestions.length > 0) {
@@ -108,37 +127,33 @@ export class AppComponent {
       } else {
         this.error.set("No learning automation suggestions could be generated. Try a folder with more text-based content like .md or .txt files.");
       }
+    } catch (e: unknown) {
+      const errorMessage = e instanceof Error ? e.message : 'An unknown error occurred.';
+      this.error.set(errorMessage);
     } finally {
       this.loadingState.set('idle');
     }
   }
 
-  private async scanDirectory(keyFileSet: Set<string>, checkExtension = false): Promise<string | null> {
+  private async pickAndSummarizeDirectory(keyFileSet: Set<string>, checkExtension = false): Promise<string | null> {
     if (!('showDirectoryPicker' in window)) {
-      this.error.set('Your browser does not support scanning local folders. Please use a modern browser like Chrome or Edge.');
-      return null;
+      throw new Error('Your browser does not support scanning local folders. Please use a modern browser like Chrome or Edge.');
     }
-
-    this.suggestions.set(null);
-    this.error.set(null);
 
     try {
       const directoryHandle = await window.showDirectoryPicker();
       const summary = await this.generateDirectorySummary(directoryHandle, keyFileSet, checkExtension);
 
       if (!summary.trim()) {
-        this.error.set("The selected directory appears to be empty or could not be read.");
-        return null;
+        throw new Error("The selected directory appears to be empty or could not be read.");
       }
       return summary;
     } catch (err: unknown) {
       if (err instanceof DOMException && err.name === 'AbortError') {
-        this.error.set(null); // User cancelled, not an error.
-      } else {
-        const errorMessage = err instanceof Error ? err.message : 'An error occurred while scanning the directory.';
-        this.error.set(errorMessage);
+        return null; // User cancelled, not an error.
       }
-      return null;
+      // Re-throw other errors to be caught by the caller.
+      throw err;
     }
   }
 
