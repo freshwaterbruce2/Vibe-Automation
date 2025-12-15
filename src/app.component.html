@@ -1,4 +1,3 @@
-
 <div class="min-h-screen flex flex-col items-center p-4 sm:p-6 lg:p-8 bg-slate-900 font-sans">
   <div class="w-full max-w-4xl mx-auto">
     <!-- Header -->
@@ -15,6 +14,13 @@
     <!-- Input Section -->
     <main>
       <div class="bg-slate-800/50 p-6 rounded-2xl shadow-lg border border-slate-700">
+        @if (!isGeminiConfigured) {
+          <div class="bg-amber-900/50 border border-amber-700 text-amber-300 p-4 rounded-lg text-center mb-6">
+            <h3 class="font-bold">Configuration Required</h3>
+            <p>The Gemini API key is missing. Please configure the <strong>API_KEY</strong> environment variable to enable app functionality.</p>
+          </div>
+        }
+
         <label for="task-description" class="block text-base font-medium text-slate-300 mb-2">1. Describe a Manual Task</label>
         <textarea
           id="task-description"
@@ -43,8 +49,8 @@
              <!-- Analyze Task Button -->
              <button
                (click)="analyzeTask()"
-               [disabled]="loadingState() !== 'idle' || !taskDescription().trim()"
-               class="w-full flex items-center justify-center gap-3 bg-indigo-600 hover:bg-indigo-500 disabled:bg-indigo-800/50 disabled:cursor-not-allowed text-white font-semibold py-3 px-6 rounded-lg transition-all duration-300 shadow-lg shadow-indigo-600/20 transform hover:scale-105 disabled:scale-100">
+               [disabled]="loadingState() !== 'idle' || !taskDescription().trim() || !isGeminiConfigured"
+               class="w-full flex items-center justify-center gap-3 bg-indigo-600 hover:bg-indigo-500 disabled:bg-indigo-900/80 disabled:text-slate-400 disabled:cursor-not-allowed text-white font-semibold py-3 px-6 rounded-lg transition-all duration-300 shadow-lg shadow-indigo-600/20 transform hover:scale-105 disabled:scale-100">
                @if (loadingState() === 'analyzing_task') {
                  <svg class="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
@@ -61,8 +67,8 @@
              <!-- Scan Project Button -->
               <button
                 (click)="scanLocalProject()"
-                [disabled]="loadingState() !== 'idle'"
-                class="w-full flex items-center justify-center gap-3 bg-sky-600 hover:bg-sky-500 disabled:bg-sky-800/50 disabled:cursor-not-allowed text-white font-semibold py-3 px-6 rounded-lg transition-all duration-300 shadow-lg shadow-sky-600/20 transform hover:scale-105 disabled:scale-100">
+                [disabled]="loadingState() !== 'idle' || !isGeminiConfigured"
+                class="w-full flex items-center justify-center gap-3 bg-sky-600 hover:bg-sky-500 disabled:bg-sky-900/80 disabled:text-slate-400 disabled:cursor-not-allowed text-white font-semibold py-3 px-6 rounded-lg transition-all duration-300 shadow-lg shadow-sky-600/20 transform hover:scale-105 disabled:scale-100">
                 @if (loadingState() === 'scanning_project') {
                   <svg class="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                     <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
@@ -79,8 +85,8 @@
               <!-- Scan Learning Folder Button -->
               <button
                 (click)="scanLearningFolder()"
-                [disabled]="loadingState() !== 'idle'"
-                class="w-full flex items-center justify-center gap-3 bg-emerald-600 hover:bg-emerald-500 disabled:bg-emerald-800/50 disabled:cursor-not-allowed text-white font-semibold py-3 px-6 rounded-lg transition-all duration-300 shadow-lg shadow-emerald-600/20 transform hover:scale-105 disabled:scale-100">
+                [disabled]="loadingState() !== 'idle' || !isGeminiConfigured"
+                class="w-full flex items-center justify-center gap-3 bg-emerald-600 hover:bg-emerald-500 disabled:bg-emerald-900/80 disabled:text-slate-400 disabled:cursor-not-allowed text-white font-semibold py-3 px-6 rounded-lg transition-all duration-300 shadow-lg shadow-emerald-600/20 transform hover:scale-105 disabled:scale-100">
                 @if (loadingState() === 'scanning_learning') {
                   <svg class="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                     <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
@@ -95,6 +101,7 @@
                 }
              </button>
            </div>
+           <p class="text-xs text-slate-500 text-center mt-4">Note: Scanning will open a system dialog for you to select a local folder.</p>
         </div>
       </div>
 

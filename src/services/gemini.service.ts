@@ -17,13 +17,17 @@ export interface AutomationResponse {
   providedIn: 'root'
 })
 export class GeminiService {
-  private ai: GoogleGenAI;
+  private ai: GoogleGenAI | null = null;
+  public readonly isConfigured: boolean = false;
 
   constructor() {
-    if (!process.env.API_KEY) {
-      throw new Error("API_KEY environment variable not set");
+    const apiKey = process.env.API_KEY;
+    if (apiKey) {
+      this.ai = new GoogleGenAI({ apiKey });
+      this.isConfigured = true;
+    } else {
+      console.warn("API_KEY environment variable not set. Gemini functionality will be disabled.");
     }
-    this.ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
   }
 
   async getTaskAutomationSuggestions(taskDescription: string): Promise<AutomationResponse> {
@@ -92,6 +96,9 @@ For each suggestion, provide the following details in a clear, structured JSON f
   }
 
   private async generateSuggestions(prompt: string): Promise<AutomationResponse> {
+    if (!this.isConfigured || !this.ai) {
+      throw new Error("Gemini API key is not configured. Please set the API_KEY environment variable to use the application.");
+    }
      try {
       const response = await this.ai.models.generateContent({
         model: "gemini-2.5-flash",

@@ -32,6 +32,7 @@ declare global {
 })
 export class AppComponent {
   private readonly geminiService = inject(GeminiService);
+  public readonly isGeminiConfigured: boolean;
 
   taskDescription = signal('');
   suggestions = signal<AutomationSuggestion[] | null>(null);
@@ -43,6 +44,10 @@ export class AppComponent {
     "For my monthly report, I download CSV files from three different systems, combine them, filter for specific clients, and then create charts in a presentation.",
     "I manage social media posts. I have to manually post the same content to Twitter, Facebook, and LinkedIn every day and then check for comments."
   ]);
+
+  constructor() {
+    this.isGeminiConfigured = this.geminiService.isConfigured;
+  }
 
   selectExample(prompt: string): void {
     this.taskDescription.set(prompt);
